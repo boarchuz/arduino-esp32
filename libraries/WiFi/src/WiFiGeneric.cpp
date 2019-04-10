@@ -339,6 +339,7 @@ const char * system_event_reasons[] = { "UNSPECIFIED", "AUTH_EXPIRE", "AUTH_LEAV
 #endif
 esp_err_t WiFiGenericClass::_eventCallback(void *arg, system_event_t *event)
 {
+    bool doAutoReconnect = false;
     if(event->event_id < 26) log_d("Event: %d - %s", event->event_id, system_event_names[event->event_id]);
     if(event->event_id == SYSTEM_EVENT_SCAN_DONE) {
         WiFiScanClass::_scanDone();
@@ -371,8 +372,7 @@ esp_err_t WiFiGenericClass::_eventCallback(void *arg, system_event_t *event)
             (reason >= WIFI_REASON_BEACON_TIMEOUT && reason != WIFI_REASON_AUTH_FAIL)) &&
             WiFi.getAutoReconnect())
         {
-            WiFi.disconnect(true);
-            WiFi.begin();
+            doAutoReconnect=true;
         }
     } else if(event->event_id == SYSTEM_EVENT_STA_GOT_IP) {
 #if ARDUHAL_LOG_LEVEL >= ARDUHAL_LOG_LEVEL_DEBUG
@@ -445,6 +445,11 @@ esp_err_t WiFiGenericClass::_eventCallback(void *arg, system_event_t *event)
                 }
             }
         }
+    }
+    if(doAutoReconnect)
+    {
+        WiFi.disconnect(true);
+        WiFi.begin();
     }
     return ESP_OK;
 }
